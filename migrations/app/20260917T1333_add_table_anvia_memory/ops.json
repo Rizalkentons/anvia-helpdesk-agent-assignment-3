@@ -1,0 +1,499 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.AgentMemoryError",
+    "label": "Create table \"AgentMemoryError\"",
+    "summary": "Creates table \"AgentMemoryError\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AgentMemoryError"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AgentMemoryError\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AgentMemoryError\"",
+        "sql": "CREATE TABLE \"public\".\"AgentMemoryError\" (\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"error\" jsonb NOT NULL,\n  \"id\" text NOT NULL,\n  \"memorySessionId\" text NOT NULL,\n  \"messages\" jsonb NOT NULL,\n  \"runId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AgentMemoryError\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AgentMemoryMessage",
+    "label": "Create table \"AgentMemoryMessage\"",
+    "summary": "Creates table \"AgentMemoryMessage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AgentMemoryMessage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AgentMemoryMessage\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AgentMemoryMessage\"",
+        "sql": "CREATE TABLE \"public\".\"AgentMemoryMessage\" (\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"memorySessionId\" text NOT NULL,\n  \"message\" jsonb NOT NULL,\n  \"position\" int4 NOT NULL,\n  \"role\" text NOT NULL,\n  \"runId\" text NOT NULL,\n  \"turn\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AgentMemoryMessage\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AgentMemorySession",
+    "label": "Create table \"AgentMemorySession\"",
+    "summary": "Creates table \"AgentMemorySession\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AgentMemorySession"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AgentMemorySession\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemorySession\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AgentMemorySession\"",
+        "sql": "CREATE TABLE \"public\".\"AgentMemorySession\" (\n  \"compactionState\" jsonb,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"metadata\" jsonb NOT NULL,\n  \"scopeKey\" text NOT NULL,\n  \"sessionId\" text NOT NULL,\n  \"updatedAt\" timestamp(3) NOT NULL,\n  \"userId\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AgentMemorySession\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemorySession\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.AgentMemoryMessage.AgentMemoryMessage_memorySessionId_position_key",
+    "label": "Add unique constraint on \"AgentMemoryMessage\" (memorySessionId, position)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "AgentMemoryMessage_memorySessionId_position_key",
+        "table": "AgentMemoryMessage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"AgentMemoryMessage_memorySessionId_position_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryMessage_memorySessionId_position_key",
+          "public",
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"AgentMemoryMessage_memorySessionId_position_key\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMemoryMessage\" ADD CONSTRAINT \"AgentMemoryMessage_memorySessionId_position_key\" UNIQUE (\"memorySessionId\", \"position\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"AgentMemoryMessage_memorySessionId_position_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryMessage_memorySessionId_position_key",
+          "public",
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.AgentMemorySession.AgentMemorySession_scopeKey_key",
+    "label": "Add unique constraint on \"AgentMemorySession\" (scopeKey)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "AgentMemorySession_scopeKey_key",
+        "table": "AgentMemorySession"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"AgentMemorySession_scopeKey_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemorySession_scopeKey_key",
+          "public",
+          "\"public\".\"AgentMemorySession\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"AgentMemorySession_scopeKey_key\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMemorySession\" ADD CONSTRAINT \"AgentMemorySession_scopeKey_key\" UNIQUE (\"scopeKey\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"AgentMemorySession_scopeKey_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemorySession_scopeKey_key",
+          "public",
+          "\"public\".\"AgentMemorySession\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMemoryError.AgentMemoryError_memorySessionId_idx_e2496344",
+    "label": "Create index \"AgentMemoryError_memorySessionId_idx_e2496344\" on \"AgentMemoryError\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMemoryError_memorySessionId_idx_e2496344",
+        "table": "AgentMemoryError"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMemoryError_memorySessionId_idx_e2496344\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError_memorySessionId_idx_e2496344\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMemoryError_memorySessionId_idx_e2496344\"",
+        "sql": "CREATE INDEX \"AgentMemoryError_memorySessionId_idx_e2496344\" ON \"public\".\"AgentMemoryError\" (\"memorySessionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMemoryError_memorySessionId_idx_e2496344\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError_memorySessionId_idx_e2496344\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMemoryError.AgentMemoryError_runId_idx_a6016437",
+    "label": "Create index \"AgentMemoryError_runId_idx_a6016437\" on \"AgentMemoryError\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMemoryError_runId_idx_a6016437",
+        "table": "AgentMemoryError"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMemoryError_runId_idx_a6016437\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError_runId_idx_a6016437\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMemoryError_runId_idx_a6016437\"",
+        "sql": "CREATE INDEX \"AgentMemoryError_runId_idx_a6016437\" ON \"public\".\"AgentMemoryError\" (\"runId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMemoryError_runId_idx_a6016437\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryError_runId_idx_a6016437\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMemoryMessage.AgentMemoryMessage_memorySessionId_idx_e2496344",
+    "label": "Create index \"AgentMemoryMessage_memorySessionId_idx_e2496344\" on \"AgentMemoryMessage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMemoryMessage_memorySessionId_idx_e2496344",
+        "table": "AgentMemoryMessage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMemoryMessage_memorySessionId_idx_e2496344\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage_memorySessionId_idx_e2496344\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMemoryMessage_memorySessionId_idx_e2496344\"",
+        "sql": "CREATE INDEX \"AgentMemoryMessage_memorySessionId_idx_e2496344\" ON \"public\".\"AgentMemoryMessage\" (\"memorySessionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMemoryMessage_memorySessionId_idx_e2496344\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage_memorySessionId_idx_e2496344\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMemoryMessage.AgentMemoryMessage_runId_idx_a6016437",
+    "label": "Create index \"AgentMemoryMessage_runId_idx_a6016437\" on \"AgentMemoryMessage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMemoryMessage_runId_idx_a6016437",
+        "table": "AgentMemoryMessage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMemoryMessage_runId_idx_a6016437\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage_runId_idx_a6016437\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMemoryMessage_runId_idx_a6016437\"",
+        "sql": "CREATE INDEX \"AgentMemoryMessage_runId_idx_a6016437\" ON \"public\".\"AgentMemoryMessage\" (\"runId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMemoryMessage_runId_idx_a6016437\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemoryMessage_runId_idx_a6016437\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMemorySession.AgentMemorySession_sessionId_userId_idx_3d9f8c77",
+    "label": "Create index \"AgentMemorySession_sessionId_userId_idx_3d9f8c77\" on \"AgentMemorySession\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMemorySession_sessionId_userId_idx_3d9f8c77",
+        "table": "AgentMemorySession"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMemorySession_sessionId_userId_idx_3d9f8c77\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemorySession_sessionId_userId_idx_3d9f8c77\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMemorySession_sessionId_userId_idx_3d9f8c77\"",
+        "sql": "CREATE INDEX \"AgentMemorySession_sessionId_userId_idx_3d9f8c77\" ON \"public\".\"AgentMemorySession\" (\"sessionId\", \"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMemorySession_sessionId_userId_idx_3d9f8c77\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMemorySession_sessionId_userId_idx_3d9f8c77\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AgentMemoryError.AgentMemoryError_memorySessionId_fkey",
+    "label": "Add foreign key \"AgentMemoryError_memorySessionId_fkey\" on \"AgentMemoryError\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AgentMemoryError_memorySessionId_fkey",
+        "table": "AgentMemoryError"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AgentMemoryError_memorySessionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryError_memorySessionId_fkey",
+          "public",
+          "\"public\".\"AgentMemoryError\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AgentMemoryError_memorySessionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMemoryError\"\nADD CONSTRAINT \"AgentMemoryError_memorySessionId_fkey\"\nFOREIGN KEY (\"memorySessionId\")\nREFERENCES \"public\".\"AgentMemorySession\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AgentMemoryError_memorySessionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryError_memorySessionId_fkey",
+          "public",
+          "\"public\".\"AgentMemoryError\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AgentMemoryMessage.AgentMemoryMessage_memorySessionId_fkey",
+    "label": "Add foreign key \"AgentMemoryMessage_memorySessionId_fkey\" on \"AgentMemoryMessage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AgentMemoryMessage_memorySessionId_fkey",
+        "table": "AgentMemoryMessage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AgentMemoryMessage_memorySessionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryMessage_memorySessionId_fkey",
+          "public",
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AgentMemoryMessage_memorySessionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMemoryMessage\"\nADD CONSTRAINT \"AgentMemoryMessage_memorySessionId_fkey\"\nFOREIGN KEY (\"memorySessionId\")\nREFERENCES \"public\".\"AgentMemorySession\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AgentMemoryMessage_memorySessionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMemoryMessage_memorySessionId_fkey",
+          "public",
+          "\"public\".\"AgentMemoryMessage\""
+        ]
+      }
+    ]
+  }
+]
