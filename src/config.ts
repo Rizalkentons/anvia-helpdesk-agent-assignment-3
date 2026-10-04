@@ -63,5 +63,6 @@ export const config = {
   },
   studio: {
     port: positiveInteger("STUDIO_PORT", 4021),
+    sessionStorePath: optional("STUDIO_SESSION_DB", "data/studio-sessions.sqlite"),
   },
 } as const;

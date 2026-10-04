@@ -129,10 +129,15 @@ the **Tools** page lists `create_ticket`, `get_ticket`, `list_tickets`.
 6. Inspect the run in the sidebar:
    - **Memory** — persisted conversations and messages, read straight from PostgreSQL.
    - **Traces** — per-run tool calls, timings, token usage.
-   - **Tools** — the tool catalogue with input schemas, plus a *Run* action to invoke a tool directly.
+   - **Tools** — the tool catalogue with input schemas. Select a tool, fill its
+     arguments (the **Form** view labels each field), press **Run**, and the
+     result appears under *Tool result*. Try `get_ticket` with `TCK-1001`.
 
-Every turn you send in one Studio session is stored under that session id, so
-closing the browser and returning later still continues the same conversation.
+Every turn you send in one Studio session is stored under that session id. Studio's
+own session and trace store is the SQLite file at `STUDIO_SESSION_DB`
+(`data/studio-sessions.sqlite`), and the agent's conversation memory is the
+PostgreSQL store — so both survive restarting `pnpm dev`. Continue the same
+conversation after a restart by reopening the session from the **Sessions** page.
 
 ## 6. Step-by-step: watching memory and compaction in the database
 
@@ -226,6 +231,7 @@ All of these live in `.env` and are read once, in `src/config.ts`.
 | `DEMO_USER_ID` | `user_456` | Requester identity attached to tool calls. |
 | `TICKETS_FILE` | `data/tickets.json` | Ticket storage for the demo service. |
 | `STUDIO_PORT` | `4021` | Studio UI port. |
+| `STUDIO_SESSION_DB` | `data/studio-sessions.sqlite` | Studio's own session and trace store. |
 
 ## 9. Data model
 
@@ -249,7 +255,28 @@ on the file-backed implementation. To use a real database, implement that
 interface and pass it in `src/agent/index.ts` — the tools, the agent, and the
 memory layer stay untouched.
 
-## 11. Troubleshooting
+## 11. Verifying everything works
+
+Run these after the first run to confirm each requirement of the assignment.
+
+| # | Check | Command | Expected |
+| --- | --- | --- | --- |
+| 1 | Types compile | `pnpm typecheck` | no output, exit 0 |
+| 2 | DB matches contract | `pnpm db:verify` | `"Database marker and schema match contract"` |
+| 3 | Memory tables exist | `docker compose exec -T db psql -U anvia -d anvia -c '\dt'` | `AgentMemoryError`, `AgentMemoryMessage`, `AgentMemorySession` |
+| 4 | Agent + tools are served | `curl -s localhost:4021/agents/helpdesk/tools` | `create_ticket`, `get_ticket`, `list_tickets` |
+| 5 | Memory store is attached | `curl -s localhost:4021/memory/sources` | one source, `storeKind: "prisma"` |
+| 6 | A turn calls a tool | ask for a ticket in the UI | a `create_ticket` card and a ticket id |
+| 7 | History is reused | ask "what ticket did you open for me?" | the id from the earlier turn, without repeating it |
+| 8 | Compaction fires | restart with `MEMORY_COMPACTION_AFTER_TOKENS=300 MEMORY_COMPACTION_RECENT_TOKENS=50`, then send 3 turns | a `memory_compaction` entry in the run log |
+| 9 | Checkpoint is durable | the SQL query in [section 6](#6-step-by-step-watching-memory-and-compaction-in-the-database) | `checkpoint = t`, `generation` >= 1 |
+| 10 | Canonical history is intact | `SELECT count(*) FROM "AgentMemoryMessage";` | row count grows; nothing is deleted by compaction |
+| 11 | Storage survives a restart | stop `pnpm dev`, start it again, reopen the session | the agent still recalls the earlier ticket |
+| 12 | Config fails fast | `OPENAI_API_KEY= pnpm demo` | `Missing required environment variable OPENAI_API_KEY` |
+
+Steps 4–5 need `pnpm dev` running. Steps 9–10 need `docker compose up -d db`.
+
+## 12. Troubleshooting
 
 **Studio runs fail with `invalid-tool-call`.** The configured gateway attaches a
 `usage` object to every streamed chat-completions chunk, and `@anvia/openai`
@@ -266,13 +293,25 @@ empty; copy `.env.example` and fill it in.
 **`MEMORY_COMPACTION_RECENT_TOKENS must be smaller than ...`.** The retained budget
 must be below the trigger, otherwise compaction could never free any context.
 
-**Studio says the port is in use.** Another process holds `4021`; set `STUDIO_PORT`
-to a free port.
+**`listen EADDRINUSE: address already in use :::4021`.** Another process holds the
+port — often an earlier `pnpm dev` that was not stopped. Find and stop it, or set
+`STUDIO_PORT` to a free port:
+
+```bash
+lsof -nP -iTCP:4021 -sTCP:LISTEN
+```
 
 **`pnpm db:verify` reports a mismatch.** The database predates the current
 contract. Re-run `pnpm db:init` for a fresh database, or apply pending migrations.
 
-## 12. Project layout
+**Starting over.** To wipe all demo state — tickets, Studio sessions, and stored
+memory:
+
+```bash
+docker compose down -v && docker compose up -d db && pnpm db:init && rm -rf data
+```
+
+## 13. Project layout
 
 ```text
 .
